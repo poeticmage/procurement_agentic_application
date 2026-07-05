@@ -399,14 +399,7 @@ Because these are plain YAML files, policy changes don't require a code deployme
 - **Storage:** AWS S3, Google Cloud Storage
 - **Auth:** Kong OAuth2
 
-## Docker
 
-The included `Dockerfile` builds a Python 3.11-slim image, installs `requirements.txt`, exposes port 5000, and runs the production entry point:
-
-```bash
-docker build -t allyra-procurement-agent .
-docker run -p 5000:5000 --env-file .env allyra-procurement-agent
-```
 
 Internally this runs:
 
