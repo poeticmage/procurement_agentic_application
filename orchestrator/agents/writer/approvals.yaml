@@ -1,0 +1,724 @@
+# =============================================================================
+# APPROVAL POLICIES
+# =============================================================================
+# Defines approval chains, escalation paths, delegation rules, and SLA
+# timeouts for every procurement category and budget tier.
+#
+# Schema version: 2.1.0
+# Last reviewed:  2025-01-01
+# Owner:          Procurement Governance Team
+# =============================================================================
+
+meta:
+  schema_version: "2.1.0"
+  policy_effective_date: "2025-01-01"
+  review_cycle_months: 12
+  owner_team: procurement_governance
+  contact_email: procurement-policy@company.com
+
+# ---------------------------------------------------------------------------
+# Global defaults — inherited by every category unless overridden
+# ---------------------------------------------------------------------------
+defaults:
+  approval_mode: sequential          # sequential | parallel | any_one
+  sla_hours: 48
+  escalation_after_hours: 72
+  auto_approve_below_amount: 5000    # INR — skip approval for petty purchases
+  allow_self_approval: false
+  require_justification_above: 50000
+  delegation:
+    allowed: true
+    max_delegation_depth: 1          # approver may delegate only one level down
+    delegation_requires_reason: true
+    delegation_expires_days: 30
+
+# ---------------------------------------------------------------------------
+# Role registry — canonical role IDs referenced throughout this file
+# ---------------------------------------------------------------------------
+roles:
+  department_manager:
+    display_name: Department Manager
+    tier: 1
+    backup_role: senior_manager
+  it_manager:
+    display_name: IT Manager
+    tier: 2
+    backup_role: cto
+  procurement_manager:
+    display_name: Procurement Manager
+    tier: 2
+    backup_role: cpo
+  finance_manager:
+    display_name: Finance Manager
+    tier: 2
+    backup_role: cfo
+  security_team:
+    display_name: Information Security Team
+    tier: 2
+    backup_role: ciso
+    can_veto: true                   # veto blocks regardless of other approvals
+  legal_team:
+    display_name: Legal & Compliance
+    tier: 2
+    backup_role: general_counsel
+    can_veto: true
+  hr_manager:
+    display_name: HR Manager
+    tier: 2
+    backup_role: chro
+  facilities_manager:
+    display_name: Facilities Manager
+    tier: 2
+    backup_role: coo
+  network_manager:
+    display_name: Network & Infrastructure Manager
+    tier: 2
+    backup_role: it_manager
+  cloud_architect:
+    display_name: Cloud Architect / Principal Engineer
+    tier: 2
+    backup_role: cto
+  business_owner:
+    display_name: Business Unit Owner
+    tier: 2
+    backup_role: department_manager
+  cto:
+    display_name: Chief Technology Officer
+    tier: 3
+    backup_role: ceo
+  cfo:
+    display_name: Chief Financial Officer
+    tier: 3
+    backup_role: ceo
+  cpo:
+    display_name: Chief Procurement Officer
+    tier: 3
+    backup_role: coo
+  ciso:
+    display_name: Chief Information Security Officer
+    tier: 3
+    backup_role: cto
+  coo:
+    display_name: Chief Operating Officer
+    tier: 3
+    backup_role: ceo
+  ceo:
+    display_name: Chief Executive Officer
+    tier: 4
+
+# ---------------------------------------------------------------------------
+# Budget-tier thresholds (INR) — used by approval_chains below
+# ---------------------------------------------------------------------------
+budget_tiers:
+  micro:
+    max: 5000
+    label: Micro Purchase
+  low:
+    max: 50000
+    label: Low Value
+  medium:
+    max: 500000
+    label: Medium Value
+  high:
+    max: 2000000
+    label: High Value
+  strategic:
+    max: null                        # unbounded
+    label: Strategic / Board Level
+
+# ---------------------------------------------------------------------------
+# Approval chains per category
+# ---------------------------------------------------------------------------
+approval_chains:
+
+  # ── IT Hardware ────────────────────────────────────────────────────────────
+  laptop:
+    description: End-user laptops and mobile workstations
+    mode: sequential
+    sla_hours: 48
+    tiers:
+      micro:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+      low:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+      medium:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+          - role: cto
+            required: true
+            sla_hours: 72
+          - role: cfo
+            required: true
+            sla_hours: 72
+
+  desktop:
+    description: Desktop workstations and all-in-ones
+    mode: sequential
+    sla_hours: 48
+    tiers:
+      micro:
+        steps:
+          - role: department_manager
+            required: true
+            sla_hours: 24
+      low:
+        steps:
+          - role: it_manager
+            required: true
+            sla_hours: 24
+      medium:
+        steps:
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: it_manager
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: cto
+            required: true
+
+  # ── Software ───────────────────────────────────────────────────────────────
+  software:
+    description: Commercial off-the-shelf and SaaS software licenses
+    mode: sequential
+    sla_hours: 72                    # longer due to mandatory security review
+    special_gates:
+      - gate: security_assessment_complete
+        required: true
+        blocks_approval_until_done: true
+      - gate: data_privacy_review_complete
+        required: true
+        blocks_approval_until_done: true
+    tiers:
+      micro:
+        steps:
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: security_team
+            required: true
+            sla_hours: 48
+      low:
+        steps:
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      medium:
+        steps:
+          - role: business_owner
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: business_owner
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: legal_team
+            required: true
+            sla_hours: 72
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: business_owner
+            required: true
+          - role: it_manager
+            required: true
+          - role: security_team
+            required: true
+          - role: legal_team
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: cto
+            required: true
+          - role: cfo
+            required: true
+
+  # ── Cloud Services ─────────────────────────────────────────────────────────
+  cloud_services:
+    description: IaaS, PaaS, SaaS cloud platform subscriptions
+    mode: sequential
+    sla_hours: 96
+    special_gates:
+      - gate: security_assessment_complete
+        required: true
+        blocks_approval_until_done: true
+      - gate: data_residency_review_complete
+        required: true
+        blocks_approval_until_done: true
+      - gate: architecture_review_complete
+        required: true
+        blocks_approval_until_done: true
+    tiers:
+      low:
+        steps:
+          - role: cloud_architect
+            required: true
+            sla_hours: 48
+          - role: security_team
+            required: true
+            sla_hours: 48
+      medium:
+        steps:
+          - role: cloud_architect
+            required: true
+            sla_hours: 48
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: cloud_architect
+            required: true
+            sla_hours: 48
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+          - role: cto
+            required: true
+            sla_hours: 72
+      strategic:
+        steps:
+          - role: cloud_architect
+            required: true
+          - role: security_team
+            required: true
+          - role: finance_manager
+            required: true
+          - role: cto
+            required: true
+          - role: cfo
+            required: true
+
+  # ── Network Equipment ──────────────────────────────────────────────────────
+  network_equipment:
+    description: Switches, routers, firewalls, wireless infrastructure
+    mode: sequential
+    sla_hours: 72
+    special_gates:
+      - gate: compatibility_review_complete
+        required: true
+        blocks_approval_until_done: true
+    tiers:
+      low:
+        steps:
+          - role: network_manager
+            required: true
+            sla_hours: 24
+      medium:
+        steps:
+          - role: network_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: network_manager
+            required: true
+            sla_hours: 24
+          - role: it_manager
+            required: true
+            sla_hours: 24
+          - role: security_team
+            required: true
+            sla_hours: 48
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: network_manager
+            required: true
+          - role: it_manager
+            required: true
+          - role: security_team
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: cto
+            required: true
+
+  # ── Consulting & Professional Services ─────────────────────────────────────
+  consulting_services:
+    description: External consulting engagements
+    mode: sequential
+    sla_hours: 72
+    tiers:
+      low:
+        steps:
+          - role: business_owner
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      medium:
+        steps:
+          - role: business_owner
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: business_owner
+            required: true
+            sla_hours: 24
+          - role: legal_team
+            required: true
+            sla_hours: 72
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: business_owner
+            required: true
+          - role: legal_team
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: coo
+            required: true
+
+  professional_services:
+    description: Specialized professional services (legal, audit, advisory)
+    mode: sequential
+    sla_hours: 96
+    tiers:
+      low:
+        steps:
+          - role: business_owner
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: legal_team
+            required: true
+      medium:
+        steps:
+          - role: business_owner
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: legal_team
+            required: true
+          - role: finance_manager
+            required: true
+      high:
+        steps:
+          - role: business_owner
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: legal_team
+            required: true
+          - role: finance_manager
+            required: true
+          - role: coo
+            required: true
+      strategic:
+        steps:
+          - role: business_owner
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: legal_team
+            required: true
+          - role: finance_manager
+            required: true
+          - role: coo
+            required: true
+          - role: ceo
+            required: true
+
+  # ── Training ───────────────────────────────────────────────────────────────
+  training_services:
+    description: Employee training and development programs
+    mode: sequential
+    sla_hours: 48
+    tiers:
+      micro:
+        steps:
+          - role: department_manager
+            required: true
+      low:
+        steps:
+          - role: hr_manager
+            required: true
+            sla_hours: 48
+      medium:
+        steps:
+          - role: hr_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: hr_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: chro
+            required: true
+
+  # ── Office Supplies ────────────────────────────────────────────────────────
+  office_supplies:
+    description: Stationery, consumables, and general office items
+    mode: any_one
+    sla_hours: 24
+    tiers:
+      micro:
+        steps:
+          - role: department_manager
+            required: true
+      low:
+        steps:
+          - role: department_manager
+            required: true
+      medium:
+        steps:
+          - role: department_manager
+            required: true
+          - role: procurement_manager
+            required: true
+
+  # ── Furniture & Fixtures ───────────────────────────────────────────────────
+  furniture:
+    description: Office furniture, fixtures, and ergonomic equipment
+    mode: sequential
+    sla_hours: 48
+    tiers:
+      low:
+        steps:
+          - role: facilities_manager
+            required: true
+            sla_hours: 24
+      medium:
+        steps:
+          - role: facilities_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+      high:
+        steps:
+          - role: facilities_manager
+            required: true
+            sla_hours: 24
+          - role: procurement_manager
+            required: true
+            sla_hours: 48
+          - role: finance_manager
+            required: true
+            sla_hours: 48
+      strategic:
+        steps:
+          - role: facilities_manager
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: coo
+            required: true
+
+  # ── Telecom ────────────────────────────────────────────────────────────────
+  telecom_services:
+    description: Mobile, fixed-line, internet, and unified communications
+    mode: sequential
+    sla_hours: 72
+    tiers:
+      low:
+        steps:
+          - role: it_manager
+            required: true
+      medium:
+        steps:
+          - role: it_manager
+            required: true
+          - role: procurement_manager
+            required: true
+      high:
+        steps:
+          - role: it_manager
+            required: true
+          - role: security_team
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+      strategic:
+        steps:
+          - role: it_manager
+            required: true
+          - role: security_team
+            required: true
+          - role: procurement_manager
+            required: true
+          - role: finance_manager
+            required: true
+          - role: cto
+            required: true
+
+  # ── Travel ─────────────────────────────────────────────────────────────────
+  travel_services:
+    description: Business travel bookings, accommodations, and ground transport
+    mode: any_one
+    sla_hours: 24
+    tiers:
+      micro:
+        steps:
+          - role: department_manager
+            required: true
+      low:
+        steps:
+          - role: department_manager
+            required: true
+      medium:
+        steps:
+          - role: department_manager
+            required: true
+          - role: finance_manager
+            required: true
+
+# ---------------------------------------------------------------------------
+# Emergency / urgent procurement overrides
+# ---------------------------------------------------------------------------
+emergency_procurement:
+  enabled: true
+  max_budget_override: 200000        # INR — above this, no emergency bypass
+  allowed_categories:
+    - laptop
+    - desktop
+    - network_equipment
+    - office_supplies
+    - telecom_services
+  approval_required:
+    - role: department_manager
+      required: true
+    - role: procurement_manager
+      required: true
+  post_approval_audit_required: true
+  justification_required: true
+  max_use_per_quarter: 3             # per requesting department

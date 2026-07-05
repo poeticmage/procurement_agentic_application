@@ -1,0 +1,382 @@
+# =============================================================================
+# COMPLIANCE POLICIES
+# =============================================================================
+# Security assessments, data privacy, asset management, audit requirements,
+# export control, ESG, and regulatory compliance rules per category.
+#
+# Schema version: 2.1.0
+# Last reviewed:  2025-01-01
+# Owner:          Procurement Governance Team + Legal & Compliance
+# =============================================================================
+
+meta:
+  schema_version: "2.1.0"
+  policy_effective_date: "2025-01-01"
+  review_cycle_months: 6             # compliance reviewed more frequently
+  owner_team: legal_and_compliance
+  contact_email: compliance@company.com
+  regulatory_frameworks:
+    - ISO_27001
+    - SOC2_TYPE2
+    - GDPR
+    - IT_ACT_2000_INDIA
+    - PDPB_INDIA
+    - COMPANIES_ACT_2013
+
+# ---------------------------------------------------------------------------
+# Global compliance defaults
+# ---------------------------------------------------------------------------
+defaults:
+  record_retention_years: 7
+  audit_trail_required: true
+  supplier_due_diligence_required: true
+  esg_screening_required: false      # overridden per category below
+  conflict_of_interest_declaration: true
+
+# ---------------------------------------------------------------------------
+# Security compliance framework
+# ---------------------------------------------------------------------------
+security_compliance:
+
+  assessment_levels:
+    low:
+      label: Basic Security Questionnaire
+      max_days_to_complete: 5
+      reassessment_frequency_months: 24
+    medium:
+      label: Standard Security Assessment
+      max_days_to_complete: 10
+      reassessment_frequency_months: 12
+      includes:
+        - vendor_security_questionnaire
+        - penetration_test_review
+    high:
+      label: Full Security Audit
+      max_days_to_complete: 20
+      reassessment_frequency_months: 6
+      includes:
+        - vendor_security_questionnaire
+        - penetration_test_review
+        - on_site_audit_option
+        - third_party_audit_report
+        - iso27001_or_soc2_cert_required
+    critical:
+      label: Critical Infrastructure Assessment
+      max_days_to_complete: 30
+      reassessment_frequency_months: 3
+      includes:
+        - full_high_level_audit
+        - continuous_monitoring
+        - dedicated_security_liaison
+
+  data_classification_levels:
+    public:
+      label: Public
+      data_residency_required: false
+      encryption_at_rest_required: false
+      encryption_in_transit_required: true
+    internal:
+      label: Internal Use
+      data_residency_required: false
+      encryption_at_rest_required: true
+      encryption_in_transit_required: true
+    confidential:
+      label: Confidential
+      data_residency_required: true
+      preferred_residency: india
+      encryption_at_rest_required: true
+      encryption_in_transit_required: true
+      access_control_required: true
+      audit_log_required: true
+    restricted:
+      label: Restricted / PII / Financial
+      data_residency_required: true
+      preferred_residency: india
+      encryption_at_rest_required: true
+      encryption_in_transit_required: true
+      access_control_required: true
+      audit_log_required: true
+      data_loss_prevention_required: true
+      right_to_erasure_support_required: true
+      breach_notification_sla_hours: 72
+
+# ---------------------------------------------------------------------------
+# Category-level compliance rules
+# ---------------------------------------------------------------------------
+categories:
+
+  # ── IT Hardware ─────────────────────────────────────────────────────────
+  laptop:
+    asset_management:
+      asset_tagging_required: true
+      asset_register_entry_required: true
+      tagging_standard: IT-ASSET-TAG-v2
+      serial_number_recording_required: true
+      assigned_user_recording_required: true
+      location_tracking_required: true
+    warranty:
+      minimum_months: 36
+      onsite_support_preferred: true
+      warranty_registration_required: true
+    security:
+      security_review_required: false
+      bitlocker_or_filevault_required: true
+      mdm_enrollment_required: true
+      endpoint_protection_required: true
+    disposal:
+      certified_data_wipe_required: true
+      disposal_certificate_required: true
+      ewaste_vendor_required: true
+    environmental:
+      energy_star_preferred: true
+      rohs_compliant_required: true
+    import_export:
+      customs_documentation_required: false
+      check_export_control_list: true    # ECCN / dual-use check
+
+  desktop:
+    asset_management:
+      asset_tagging_required: true
+      asset_register_entry_required: true
+      tagging_standard: IT-ASSET-TAG-v2
+      serial_number_recording_required: true
+      location_tracking_required: true
+    warranty:
+      minimum_months: 36
+      onsite_support_preferred: true
+    security:
+      security_review_required: false
+      bitlocker_required: true
+      endpoint_protection_required: true
+    disposal:
+      certified_data_wipe_required: true
+      disposal_certificate_required: true
+      ewaste_vendor_required: true
+    environmental:
+      energy_star_preferred: true
+      rohs_compliant_required: true
+
+  # ── Software ───────────────────────────────────────────────────────────
+  software:
+    security:
+      security_assessment_required: true
+      assessment_level: medium       # references security_compliance.assessment_levels
+      vulnerability_disclosure_policy_required: true
+      sast_sca_review_for_custom_code: true
+      open_source_license_review_required: true
+    data_privacy:
+      data_privacy_review_required: true
+      dpa_required: true             # Data Processing Agreement
+      gdpr_compliance_required: true
+      pdpb_compliance_required: true
+      data_mapping_required: true    # document what PII flows into the vendor
+      right_to_erasure_supported_required: true
+    license_management:
+      license_review_required: true
+      license_type_documentation_required: true
+      seat_count_audit_frequency_months: 6
+      license_reassignment_policy: true
+      license_register_entry_required: true
+    vendor_compliance:
+      iso27001_or_soc2_preferred: true
+      annual_security_report_required: true
+    disposal:
+      license_termination_checklist_required: true
+      data_deletion_confirmation_required: true
+
+  # ── Cloud Services ─────────────────────────────────────────────────────
+  cloud_services:
+    security:
+      security_assessment_required: true
+      assessment_level: high
+      continuous_monitoring_required: true
+      shared_responsibility_model_documented: true
+      incident_response_plan_required: true
+      penetration_testing_allowed: true    # vendor must permit customer PT
+    data_privacy:
+      data_privacy_review_required: true
+      dpa_required: true
+      data_residency_review_required: true
+      acceptable_residency_regions:
+        - india
+        - singapore
+        - eu                         # only if GDPR-specific data
+      cross_border_transfer_assessment_required: true
+      data_classification_required: true
+    architecture:
+      architecture_review_required: true
+      disaster_recovery_plan_required: true
+      rto_sla_minimum_hours: 4
+      rpo_sla_minimum_hours: 1
+      multi_region_redundancy_preferred: true
+      vendor_lock_in_assessment_required: true
+    vendor_compliance:
+      iso27001_required: true
+      soc2_type2_required: true
+      csp_security_certifications:
+        - CSA_STAR
+        - PCI_DSS             # if payment data involved
+    cost_management:
+      budget_alerting_required: true
+      cost_anomaly_detection_required: true
+      rightsizing_review_frequency_months: 3
+    disposal:
+      data_deletion_confirmation_required: true
+      deletion_certificate_required: true
+      backup_destruction_confirmed: true
+
+  # ── Network Equipment ──────────────────────────────────────────────────
+  network_equipment:
+    asset_management:
+      asset_tagging_required: true
+      network_topology_update_required: true
+      configuration_baseline_required: true
+    security:
+      security_review_required: true
+      assessment_level: high
+      firmware_vulnerability_review_required: true
+      supply_chain_integrity_check: true  # e.g., no banned vendor components
+      banned_vendor_check:
+        required: true
+        reference_list: banned_vendors_registry.yaml
+      default_credential_change_required: true
+      snmp_v3_minimum: true
+      tls_1_2_minimum: true
+    compatibility:
+      compatibility_review_required: true
+      existing_infrastructure_tested: true
+      interoperability_sign_off_required: true
+    warranty:
+      minimum_months: 36
+      next_business_day_replacement_preferred: true
+    disposal:
+      secure_config_wipe_required: true
+      ewaste_vendor_required: true
+
+  # ── Consulting Services ────────────────────────────────────────────────
+  consulting_services:
+    vendor_due_diligence:
+      background_check_required: true
+      reference_check_minimum: 2
+      insurance_verification_required: true
+      professional_indemnity_insurance_required: true
+      minimum_indemnity_cover_inr: 5000000
+    conflict_of_interest:
+      coi_disclosure_required: true
+      exclusivity_period_post_engagement_months: 6
+    data_handling:
+      nda_required: true
+      data_access_limited_to_scope: true
+      data_return_or_destroy_on_completion: true
+    personnel:
+      background_check_consultants: true
+      signed_confidentiality_required: true
+
+  professional_services:
+    vendor_due_diligence:
+      background_check_required: true
+      reference_check_minimum: 3
+      insurance_verification_required: true
+      professional_indemnity_insurance_required: true
+      minimum_indemnity_cover_inr: 10000000
+      professional_registration_verification: true
+    conflict_of_interest:
+      coi_disclosure_required: true
+      bar_council_or_icai_check: true   # for legal / CA firms
+    data_handling:
+      nda_required: true
+      legal_privilege_consideration: true
+      data_return_or_destroy_on_completion: true
+    financial_crime:
+      aml_kyc_check_required: true
+      sanctions_screening_required: true
+
+  # ── Training ───────────────────────────────────────────────────────────
+  training_services:
+    vendor_due_diligence:
+      accreditation_verification_required: true
+      trainer_qualification_check: true
+    data_handling:
+      participant_data_minimization: true
+      attendance_records_retention_years: 3
+    content:
+      content_review_required: false
+      content_alignment_with_policy: true
+
+  # ── Office Supplies ────────────────────────────────────────────────────
+  office_supplies:
+    environmental:
+      esg_screening_required: false
+      recycled_content_preferred: true
+      packaging_waste_minimization: true
+    vendor_due_diligence:
+      required: false
+
+  # ── Furniture & Fixtures ───────────────────────────────────────────────
+  furniture:
+    asset_management:
+      asset_tagging_required: true
+      asset_register_entry_required: true
+    environmental:
+      esg_screening_required: true
+      sustainable_materials_preferred: true
+      bis_or_greenguard_certification_preferred: true
+    safety:
+      ergonomic_standards_compliance: true
+      fire_retardant_materials_required: true
+      load_bearing_certification_required: true
+    warranty:
+      minimum_months: 12
+
+  # ── Telecom Services ───────────────────────────────────────────────────
+  telecom_services:
+    security:
+      security_review_required: true
+      assessment_level: medium
+      encryption_in_transit_required: true
+      lawful_intercept_compliance_required: true  # DOT India regulations
+    regulatory:
+      dot_license_verification_required: true
+      trai_compliance_required: true
+    data_privacy:
+      cdr_data_handling_policy_required: true  # call detail records
+    portability:
+      number_portability_documented: true
+
+  # ── Travel ─────────────────────────────────────────────────────────────
+  travel_services:
+    data_privacy:
+      traveler_pii_protection_required: true
+      gdpr_privacy_notice_if_eu_travel: true
+    safety:
+      travel_risk_assessment_required_for_high_risk_destinations: true
+      duty_of_care_policy_reference: travel_safety_policy.yaml
+    sustainability:
+      carbon_offset_encouraged: true
+      preferred_transport_priority: train_over_air_for_under_500km
+      train_preferred_under_km: 500
+
+# ---------------------------------------------------------------------------
+# Audit and record-keeping
+# ---------------------------------------------------------------------------
+audit:
+  procurement_audit:
+    frequency: annual
+    external_auditor_required_above_spend_inr: 50000000
+    sampling_percentage: 10
+    retention_years: 7
+
+  vendor_audit:
+    high_risk_vendors:
+      frequency_months: 6
+      on_site_option: true
+    medium_risk_vendors:
+      frequency_months: 12
+    low_risk_vendors:
+      frequency_months: 24
+
+  exception_tracking:
+    all_policy_exceptions_logged: true
+    exception_register_maintained: true
+    quarterly_exception_review: true
+    cpo_sign_off_for_exceptions: true

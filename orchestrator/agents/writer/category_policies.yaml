@@ -1,0 +1,967 @@
+# =============================================================================
+# CATEGORY POLICIES
+# =============================================================================
+# Master category registry. Each entry defines the category's identity,
+# required requisition fields, sub-categories, risk profile, SLAs, contract
+# requirements, and cross-references to the other policy files.
+#
+# Schema version: 2.1.0
+# Last reviewed:  2025-01-01
+# Owner:          Procurement Governance Team
+# =============================================================================
+
+meta:
+  schema_version: "2.1.0"
+  policy_effective_date: "2025-01-01"
+  review_cycle_months: 12
+  owner_team: procurement_governance
+  contact_email: procurement-policy@company.com
+  cross_references:
+    approvals: policies/approvals.yaml
+    compliance: policies/compliance.yaml
+    vendor_rules: policies/vendor_rules.yaml
+    procurement_methods: policies/procurement_methods.yaml
+
+# ---------------------------------------------------------------------------
+# Global category defaults (inherited unless overridden)
+# ---------------------------------------------------------------------------
+defaults:
+  currency: INR
+  purchase_order_required: true
+  three_way_match_required: true       # PO ↔ GRN ↔ Invoice
+  single_source_justification_required: true
+  substitution_allowed: true
+  advance_payment_allowed: false
+  advance_payment_max_percentage: 20
+  payment_terms_net_days: 45
+  requester_self_approval: false
+
+# ---------------------------------------------------------------------------
+# Categories
+# ---------------------------------------------------------------------------
+categories:
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # IT HARDWARE
+  # ══════════════════════════════════════════════════════════════════════════
+
+  laptop:
+    display_name: Laptop & Mobile Workstation
+    category_code: IT-HW-01
+    parent_category: IT_HARDWARE
+    description: >
+      Procurement of end-user portable computers including standard laptops,
+      ultra-books, and mobile workstations.
+    owner_team: IT_DEPARTMENT
+    risk_level: MEDIUM
+    risk_rationale: Data security risk; moderate supply chain risk.
+    sub_categories:
+      standard_laptop:
+        description: General-purpose user laptops
+        typical_specs:
+          processor_minimum: Intel Core i5 / AMD Ryzen 5 / Apple M2
+          ram_minimum_gb: 16
+          storage_minimum_gb: 512
+          display_minimum_inch: 13
+      developer_laptop:
+        description: High-performance laptops for engineering roles
+        typical_specs:
+          processor_minimum: Intel Core i7 / AMD Ryzen 7 / Apple M2 Pro
+          ram_minimum_gb: 32
+          storage_minimum_gb: 1024
+        requires_cto_justification: false
+      executive_laptop:
+        description: Premium ultra-thin for senior management
+        requires_cxo_approval: true
+        typical_budget_inr: 150000
+      mobile_workstation:
+        description: High-end laptops for CAD/design/ML/video editing
+        requires_it_manager_spec_approval: true
+
+    required_fields:
+      - field: quantity
+        type: integer
+        minimum: 1
+        validation: must_be_positive_integer
+      - field: sub_category
+        type: enum
+        values: [standard_laptop, developer_laptop, executive_laptop, mobile_workstation]
+      - field: budget_per_unit_inr
+        type: number
+        required: true
+      - field: total_budget_inr
+        type: number
+        required: true
+      - field: delivery_location
+        type: string
+        required: true
+        format: site_code_or_address
+      - field: delivery_deadline
+        type: date
+        required: true
+        minimum_lead_time_days: 10
+      - field: technical_requirements
+        type: text
+        required: true
+        minimum_length_chars: 50
+      - field: intended_users_or_department
+        type: string
+        required: true
+      - field: replacement_or_new
+        type: enum
+        values: [replacement, new_headcount, project_based]
+        required: true
+      - field: existing_asset_tag_if_replacement
+        type: string
+        required_if: replacement_or_new == replacement
+      - field: os_preference
+        type: enum
+        values: [windows, macos, linux]
+        default: windows
+
+    contract_requirements:
+      purchase_order_required: true
+      vendor_quote_validity_days: 30
+      nda_required: false
+      msa_required: false
+      supply_agreement_for_annual_spend_above_inr: 1000000
+
+    sla:
+      standard_delivery_days: 10
+      expedited_delivery_days: 5
+      expedited_surcharge_accepted: true
+
+    budget_guidance:
+      standard_laptop_inr: [50000, 90000]
+      developer_laptop_inr: [90000, 150000]
+      executive_laptop_inr: [100000, 200000]
+      mobile_workstation_inr: [150000, 300000]
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.laptop
+      compliance: compliance.yaml#categories.laptop
+      vendor_rules: vendor_rules.yaml#preferred_vendors.laptop
+      procurement_method: procurement_methods.yaml#method_selection_matrix.laptop
+
+  # ──────────────────────────────────────────────────────────────────────────
+  desktop:
+    display_name: Desktop Computer & Workstation
+    category_code: IT-HW-02
+    parent_category: IT_HARDWARE
+    description: >
+      Procurement of desktop computers, all-in-ones, towers, and
+      fixed workstations.
+    owner_team: IT_DEPARTMENT
+    risk_level: MEDIUM
+    sub_categories:
+      standard_desktop:
+        description: General-purpose desktop for office use
+      high_performance_workstation:
+        description: Tower or rack workstations for demanding compute tasks
+        requires_it_manager_spec_approval: true
+      thin_client:
+        description: VDI endpoint; low-spec hardware, centrally managed
+
+    required_fields:
+      - field: quantity
+        type: integer
+        minimum: 1
+      - field: sub_category
+        type: enum
+        values: [standard_desktop, high_performance_workstation, thin_client]
+      - field: budget_per_unit_inr
+        type: number
+        required: true
+      - field: total_budget_inr
+        type: number
+        required: true
+      - field: delivery_location
+        type: string
+        required: true
+      - field: delivery_deadline
+        type: date
+        required: true
+      - field: technical_requirements
+        type: text
+        required: true
+      - field: intended_users_or_department
+        type: string
+        required: true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: false
+
+    sla:
+      standard_delivery_days: 10
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.desktop
+      compliance: compliance.yaml#categories.desktop
+      vendor_rules: vendor_rules.yaml#preferred_vendors.desktop
+      procurement_method: procurement_methods.yaml#method_selection_matrix.desktop
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # SOFTWARE
+  # ══════════════════════════════════════════════════════════════════════════
+
+  software:
+    display_name: Software & SaaS Licenses
+    category_code: SW-01
+    parent_category: SOFTWARE
+    description: >
+      Procurement of commercial off-the-shelf software, SaaS subscriptions,
+      perpetual licenses, and custom software development contracts.
+    owner_team: IT_DEPARTMENT
+    risk_level: HIGH
+    risk_rationale: >
+      Data privacy, security, and vendor lock-in risks; regulatory compliance
+      implications for data handling.
+    sub_categories:
+      productivity_and_collaboration:
+        description: Office suites, email, messaging, video-conferencing
+        examples: [Microsoft 365, Google Workspace, Zoom, Slack]
+      developer_tools:
+        description: IDEs, CI/CD, code repositories, testing tools
+        examples: [GitHub Enterprise, JetBrains, Datadog]
+      security_software:
+        description: EDR, SIEM, vulnerability management, IAM
+        requires_ciso_approval: true
+      business_applications:
+        description: ERP, CRM, HRMS, finance tools
+        requires_architecture_review: true
+        examples: [SAP, Salesforce, Workday]
+      data_and_analytics:
+        description: BI tools, data warehouses, ML platforms
+        requires_data_classification_check: true
+        examples: [Tableau, Snowflake, Databricks]
+      open_source:
+        description: >
+          Procurement of support contracts or enterprise editions of
+          open-source software
+        license_audit_required: true
+
+    required_fields:
+      - field: vendor_name
+        type: string
+        required: true
+      - field: software_name_and_version
+        type: string
+        required: true
+      - field: sub_category
+        type: enum
+        values: [productivity_and_collaboration, developer_tools, security_software, business_applications, data_and_analytics, open_source]
+      - field: license_type
+        type: enum
+        values: [saas_subscription, perpetual, concurrent, user_based, device_based, open_source_support]
+        required: true
+      - field: license_count
+        type: integer
+        minimum: 1
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: intended_use
+        type: text
+        required: true
+        minimum_length_chars: 100
+      - field: data_classification
+        type: enum
+        values: [public, internal, confidential, restricted]
+        required: true
+      - field: personal_data_processed
+        type: boolean
+        required: true
+      - field: contract_duration_months
+        type: integer
+        required: true
+      - field: renewal_or_new_purchase
+        type: enum
+        values: [new, renewal, upgrade, expansion]
+        required: true
+      - field: alternatives_considered
+        type: text
+        required_for_budget_above_inr: 200000
+      - field: integration_with_existing_systems
+        type: text
+        required: false
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: true             # Master Subscription or License Agreement
+      dpa_required: true             # Data Processing Agreement if any personal data
+      sla_required: true
+      minimum_sla_uptime_percentage: 99.5
+      escrow_required_for_perpetual_above_inr: 1000000
+
+    sla:
+      security_assessment_turnaround_days: 10
+      vendor_onboarding_days: 15
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.software
+      compliance: compliance.yaml#categories.software
+      vendor_rules: vendor_rules.yaml#preferred_vendors.software
+      procurement_method: procurement_methods.yaml#method_selection_matrix.software
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # CLOUD SERVICES
+  # ══════════════════════════════════════════════════════════════════════════
+
+  cloud_services:
+    display_name: Cloud & Hosting Services
+    category_code: CLD-01
+    parent_category: CLOUD
+    description: >
+      Procurement of IaaS, PaaS, managed cloud services, colocation,
+      CDN, and related cloud infrastructure services.
+    owner_team: CLOUD_AND_INFRASTRUCTURE
+    risk_level: HIGH
+    risk_rationale: >
+      High data residency, security, and concentration risk. Long-term
+      vendor lock-in potential. Significant ongoing spend.
+    sub_categories:
+      iaas:
+        description: Compute, storage, networking (AWS EC2, Azure VMs, GCP GCE)
+        requires_architecture_review: true
+      paas:
+        description: Managed platforms (Kubernetes, databases, serverless)
+        requires_architecture_review: true
+      saas_infrastructure:
+        description: Infrastructure-adjacent SaaS (observability, logging, security)
+      colocation:
+        description: Physical rack/cage space in third-party data centre
+        requires_facilities_and_security_review: true
+      cdn_and_edge:
+        description: Content delivery and edge computing
+
+    required_fields:
+      - field: vendor_name
+        type: string
+        required: true
+      - field: service_name_and_type
+        type: string
+        required: true
+      - field: sub_category
+        type: enum
+        values: [iaas, paas, saas_infrastructure, colocation, cdn_and_edge]
+        required: true
+      - field: estimated_monthly_spend_inr
+        type: number
+        required: true
+      - field: estimated_annual_spend_inr
+        type: number
+        required: true
+      - field: expected_usage
+        type: text
+        required: true
+        minimum_length_chars: 100
+      - field: data_classification
+        type: enum
+        values: [public, internal, confidential, restricted]
+        required: true
+      - field: data_residency_region
+        type: string
+        required: true
+      - field: personal_data_processed
+        type: boolean
+        required: true
+      - field: criticality
+        type: enum
+        values: [non_critical, standard, business_critical, mission_critical]
+        required: true
+      - field: architecture_design_document
+        type: attachment
+        required_for_annual_above_inr: 1000000
+      - field: exit_strategy
+        type: text
+        required_for_annual_above_inr: 2000000
+
+    contract_requirements:
+      purchase_order_required: true
+      msa_or_enterprise_agreement: true
+      dpa_required: true
+      sla_required: true
+      minimum_sla_uptime_percentage: 99.9
+      minimum_sla_uptime_for_mission_critical: 99.99
+      right_to_audit_clause: true
+      data_deletion_on_termination_clause: true
+      price_cap_annual_increase_percentage: 5
+
+    sla:
+      architecture_review_turnaround_days: 10
+      security_assessment_turnaround_days: 15
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.cloud_services
+      compliance: compliance.yaml#categories.cloud_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.cloud_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.cloud_services
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # NETWORK EQUIPMENT
+  # ══════════════════════════════════════════════════════════════════════════
+
+  network_equipment:
+    display_name: Network & Infrastructure Equipment
+    category_code: IT-INF-01
+    parent_category: INFRASTRUCTURE
+    description: >
+      Procurement of switches, routers, firewalls, wireless APs, load
+      balancers, cabling, and associated infrastructure.
+    owner_team: NETWORK_AND_INFRASTRUCTURE
+    risk_level: HIGH
+    risk_rationale: >
+      Business-critical infrastructure; supply chain integrity and
+      national security implications for certain vendors.
+    sub_categories:
+      switching:
+        description: Access, distribution, and core switches
+      routing:
+        description: Edge and core routers
+      security_appliances:
+        description: Firewalls, IPS/IDS, DDoS mitigation
+        requires_ciso_review: true
+      wireless:
+        description: Access points, wireless controllers
+      load_balancing:
+        description: Application delivery controllers
+      structured_cabling:
+        description: Passive cabling, patch panels, racks
+      sd_wan:
+        description: SD-WAN appliances and services
+        requires_architecture_review: true
+
+    required_fields:
+      - field: quantity
+        type: integer
+        minimum: 1
+        required: true
+      - field: sub_category
+        type: enum
+        values: [switching, routing, security_appliances, wireless, load_balancing, structured_cabling, sd_wan]
+        required: true
+      - field: technical_requirements
+        type: text
+        required: true
+        minimum_length_chars: 100
+      - field: delivery_location
+        type: string
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: compatibility_requirements
+        type: text
+        required: true
+      - field: existing_infrastructure_context
+        type: text
+        required: true
+      - field: network_topology_document
+        type: attachment
+        required: true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: false
+      supply_and_support_agreement_above_inr: 2000000
+
+    sla:
+      standard_delivery_days: 15
+      critical_infrastructure_expedited_days: 7
+      compatibility_review_turnaround_days: 5
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.network_equipment
+      compliance: compliance.yaml#categories.network_equipment
+      vendor_rules: vendor_rules.yaml#preferred_vendors.network_equipment
+      procurement_method: procurement_methods.yaml#method_selection_matrix.network_equipment
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # CONSULTING SERVICES
+  # ══════════════════════════════════════════════════════════════════════════
+
+  consulting_services:
+    display_name: Consulting Services
+    category_code: SVC-CON-01
+    parent_category: SERVICES
+    description: >
+      External consulting engagements including strategy, transformation,
+      technology advisory, and project management.
+    owner_team: STRATEGY_AND_OPERATIONS
+    risk_level: MEDIUM
+    sub_categories:
+      strategy_consulting:
+        description: Corporate strategy, market entry, competitive analysis
+      technology_consulting:
+        description: IT strategy, architecture advisory, digital transformation
+      operations_consulting:
+        description: Process improvement, supply chain, organisational design
+      change_management:
+        description: Change and adoption management programmes
+      project_management:
+        description: PMO services, project managers on contract
+
+    required_fields:
+      - field: scope_of_work
+        type: text
+        required: true
+        minimum_length_chars: 200
+      - field: sub_category
+        type: enum
+        values: [strategy_consulting, technology_consulting, operations_consulting, change_management, project_management]
+        required: true
+      - field: duration_months
+        type: number
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: delivery_location
+        type: string
+        required: true
+      - field: key_deliverables
+        type: list
+        required: true
+        minimum_items: 2
+      - field: success_metrics
+        type: text
+        required: true
+      - field: number_of_consultants
+        type: integer
+        required: true
+      - field: onsite_vs_offsite_split
+        type: string
+        required: true
+      - field: ip_ownership_preference
+        type: enum
+        values: [company_owned, shared, vendor_owned_with_license]
+        required: true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: true
+      msa_required: true
+      sow_required: true
+      milestone_payment_preferred: true
+      ip_assignment_clause: true
+      non_compete_clause: true
+      non_solicitation_clause: true
+
+    sla:
+      kickoff_within_days_of_po: 10
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.consulting_services
+      compliance: compliance.yaml#categories.consulting_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.consulting_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.consulting_services
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # PROFESSIONAL SERVICES
+  # ══════════════════════════════════════════════════════════════════════════
+
+  professional_services:
+    display_name: Professional Services (Legal, Audit, Advisory)
+    category_code: SVC-PRO-01
+    parent_category: PROFESSIONAL_SERVICES
+    description: >
+      Engagement of qualified professional firms including legal counsel,
+      statutory/internal auditors, tax advisors, and financial advisors.
+    owner_team: LEGAL_AND_FINANCE
+    risk_level: HIGH
+    sub_categories:
+      legal_services:
+        description: Litigation, M&A, contracts, regulatory, IP
+        bar_council_registration_required: true
+      audit_services:
+        description: Statutory audit, internal audit, special purpose audit
+        icai_registration_required: true
+        independence_check_required: true
+      tax_advisory:
+        description: Direct tax, indirect tax (GST), transfer pricing
+        icai_or_icai_registration_required: true
+      financial_advisory:
+        description: Valuations, due diligence, transaction advisory
+      compliance_advisory:
+        description: Regulatory compliance, SEBI, RBI, FEMA
+
+    required_fields:
+      - field: scope_of_work
+        type: text
+        required: true
+        minimum_length_chars: 200
+      - field: sub_category
+        type: enum
+        values: [legal_services, audit_services, tax_advisory, financial_advisory, compliance_advisory]
+        required: true
+      - field: duration_months
+        type: number
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: key_deliverables
+        type: list
+        required: true
+      - field: partner_in_charge
+        type: string
+        required: true
+      - field: conflict_of_interest_check_completed
+        type: boolean
+        required: true
+      - field: regulatory_submission_deadline
+        type: date
+        required_if: category_involves_regulatory_filing
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: true
+      msa_required: true
+      sow_required: true
+      engagement_letter_required: true
+      indemnity_cap_negotiation_required: true
+      professional_liability_insurance_verification: true
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.professional_services
+      compliance: compliance.yaml#categories.professional_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.professional_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.professional_services
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # TRAINING
+  # ══════════════════════════════════════════════════════════════════════════
+
+  training_services:
+    display_name: Training & Development Services
+    category_code: SVC-TRN-01
+    parent_category: SERVICES
+    description: >
+      Employee learning and development including classroom, e-learning,
+      certification programmes, leadership development, and compliance training.
+    owner_team: HUMAN_RESOURCES
+    risk_level: LOW
+    sub_categories:
+      technical_training:
+        description: Technology skills, certifications (AWS, Azure, Cisco)
+      soft_skills_and_leadership:
+        description: Communication, leadership, management development
+      compliance_training:
+        description: Mandatory regulatory, code of conduct, safety training
+        mandatory: true
+        completion_tracking_required: true
+      e_learning_platform:
+        description: Procurement of LMS or e-learning platform access
+        reference_category: software
+      custom_corporate_programme:
+        description: Bespoke multi-module corporate training design
+
+    required_fields:
+      - field: training_topic
+        type: string
+        required: true
+      - field: sub_category
+        type: enum
+        values: [technical_training, soft_skills_and_leadership, compliance_training, e_learning_platform, custom_corporate_programme]
+        required: true
+      - field: participant_count
+        type: integer
+        minimum: 1
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: target_completion_date
+        type: date
+        required: true
+      - field: delivery_mode
+        type: enum
+        values: [classroom, virtual_instructor_led, e_learning, blended]
+        required: true
+      - field: certification_awarded
+        type: boolean
+        required: true
+      - field: accreditation_body_if_applicable
+        type: string
+        required_if: certification_awarded == true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: false
+      training_agreement_for_custom_above_inr: 200000
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.training_services
+      compliance: compliance.yaml#categories.training_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.training_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.training_services
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # OFFICE SUPPLIES
+  # ══════════════════════════════════════════════════════════════════════════
+
+  office_supplies:
+    display_name: Office Supplies & Consumables
+    category_code: OFF-01
+    parent_category: OFFICE
+    description: >
+      Stationery, printer consumables, pantry supplies, cleaning materials,
+      and general office items.
+    owner_team: FACILITIES_AND_ADMIN
+    risk_level: LOW
+    sub_categories:
+      stationery:
+        description: Pens, paper, notebooks, folders
+      printer_consumables:
+        description: Ink cartridges, toner, paper reams
+      pantry_supplies:
+        description: Tea, coffee, water, snacks
+      cleaning_and_hygiene:
+        description: Cleaning materials, sanitisers, PPE supplies
+      it_accessories:
+        description: Cables, mice, keyboards, USB hubs (low value)
+        max_value_per_item_inr: 5000
+        refer_to_it_hardware_above: 5000
+
+    required_fields:
+      - field: item_description
+        type: text
+        required: true
+      - field: quantity
+        type: integer
+        required: true
+      - field: delivery_location
+        type: string
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: false
+      framework_agreement_preferred: true
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.office_supplies
+      compliance: compliance.yaml#categories.office_supplies
+      vendor_rules: vendor_rules.yaml#preferred_vendors.office_supplies
+      procurement_method: procurement_methods.yaml#method_selection_matrix.office_supplies
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # FURNITURE
+  # ══════════════════════════════════════════════════════════════════════════
+
+  furniture:
+    display_name: Furniture, Fixtures & Equipment
+    category_code: FAC-01
+    parent_category: FACILITIES
+    description: >
+      Office furniture, ergonomic equipment, interior fixtures, and
+      fit-out related equipment.
+    owner_team: FACILITIES_AND_ADMIN
+    risk_level: MEDIUM
+    sub_categories:
+      seating:
+        description: Office chairs, ergonomic chairs, collaborative seating
+      desking:
+        description: Desks, height-adjustable desks, workstations
+      storage:
+        description: Cabinets, shelving, lockers
+      collaboration_and_meeting:
+        description: Meeting room tables, soft-seating, breakout furniture
+      executive_furniture:
+        description: Senior leadership office fit-out
+        requires_coo_approval: true
+      loose_ff_and_e:
+        description: Whiteboards, display screens, accessories
+
+    required_fields:
+      - field: quantity
+        type: integer
+        required: true
+      - field: sub_category
+        type: enum
+        values: [seating, desking, storage, collaboration_and_meeting, executive_furniture, loose_ff_and_e]
+        required: true
+      - field: delivery_location
+        type: string
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: floor_plan_or_layout_reference
+        type: attachment
+        required_for_budget_above_inr: 200000
+      - field: installation_required
+        type: boolean
+        required: true
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: false
+      warranty_and_installation_agreement_required: true
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.furniture
+      compliance: compliance.yaml#categories.furniture
+      vendor_rules: vendor_rules.yaml#preferred_vendors.furniture
+      procurement_method: procurement_methods.yaml#method_selection_matrix.furniture
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # TELECOM
+  # ══════════════════════════════════════════════════════════════════════════
+
+  telecom_services:
+    display_name: Telecommunications Services
+    category_code: TEL-01
+    parent_category: TELECOM
+    description: >
+      Mobile telephony, fixed-line voice, broadband, MPLS, SD-WAN services,
+      UCaaS, and international connectivity.
+    owner_team: IT_DEPARTMENT
+    risk_level: HIGH
+    risk_rationale: >
+      Critical business communication infrastructure; regulatory compliance
+      with DOT/TRAI; security considerations for network traffic.
+    sub_categories:
+      mobile_telephony:
+        description: Corporate SIM cards, mobile data plans
+      fixed_broadband:
+        description: Office internet connectivity (broadband, leased line)
+      mpls_and_sd_wan:
+        description: Enterprise WAN connectivity between offices
+        requires_architecture_review: true
+      unified_communications:
+        description: UCaaS, hosted PBX, Teams Calling
+      international_connectivity:
+        description: Global MPLS, international leased lines
+
+    required_fields:
+      - field: service_type
+        type: enum
+        values: [mobile_telephony, fixed_broadband, mpls_and_sd_wan, unified_communications, international_connectivity]
+        required: true
+      - field: expected_users_or_sites
+        type: integer
+        required: true
+      - field: bandwidth_requirements
+        type: string
+        required_for: [fixed_broadband, mpls_and_sd_wan, international_connectivity]
+      - field: contract_duration_months
+        type: integer
+        required: true
+        minimum: 12
+      - field: sla_requirements
+        type: text
+        required: true
+      - field: budget_monthly_inr
+        type: number
+        required: true
+      - field: budget_total_contract_inr
+        type: number
+        required: true
+      - field: current_provider_and_contract_expiry
+        type: string
+        required_for: renewal
+
+    contract_requirements:
+      purchase_order_required: true
+      nda_required: false
+      msa_required: true
+      sla_required: true
+      minimum_uptime_sla_percentage: 99.9
+      credits_for_sla_breach: true
+      termination_for_convenience_clause: true
+      early_termination_fee_cap_months: 3
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.telecom_services
+      compliance: compliance.yaml#categories.telecom_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.telecom_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.telecom_services
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # TRAVEL
+  # ══════════════════════════════════════════════════════════════════════════
+
+  travel_services:
+    display_name: Business Travel Services
+    category_code: TRV-01
+    parent_category: TRAVEL
+    description: >
+      Corporate air, rail, and ground travel; hotel accommodation;
+      travel insurance; visa and forex services.
+    owner_team: FINANCE_AND_ADMIN
+    risk_level: LOW
+    sub_categories:
+      air_travel:
+        description: Domestic and international flights
+        booking_class_policy:
+          below_4_hours: economy
+          4_to_8_hours: economy_or_premium_economy
+          above_8_hours_and_vp_plus: business_class
+          business_class_requires_cxo_approval: true
+      rail_travel:
+        description: Train bookings (preferred for routes under 500km)
+        preferred_over_air: true
+      ground_transport:
+        description: Taxi, cab-hailing, car rental, airport transfers
+      accommodation:
+        description: Hotels and serviced apartments
+        daily_rate_cap_inr_by_city:
+          tier_1_cities: 8000         # Mumbai, Delhi, Bengaluru, Chennai, Hyderabad
+          tier_2_cities: 5000
+          international: 15000        # equivalent INR
+      travel_insurance:
+        description: Corporate travel insurance
+        mandatory: true
+      visa_and_forex:
+        description: Visa application support and foreign exchange
+      conferences_and_events:
+        description: Registration and logistics for external events
+
+    required_fields:
+      - field: traveler_count
+        type: integer
+        minimum: 1
+        required: true
+      - field: destination
+        type: string
+        required: true
+      - field: travel_dates
+        type: date_range
+        required: true
+      - field: purpose_of_travel
+        type: text
+        required: true
+      - field: sub_category
+        type: enum
+        values: [air_travel, rail_travel, ground_transport, accommodation, travel_insurance, visa_and_forex, conferences_and_events]
+        required: true
+      - field: budget_inr
+        type: number
+        required: true
+      - field: manager_approved_travel
+        type: boolean
+        required: true
+
+    contract_requirements:
+      purchase_order_required: false
+      booking_through_approved_tmc_required: true
+      nda_required: false
+      msa_required: false
+
+    cross_references:
+      approvals: approvals.yaml#approval_chains.travel_services
+      compliance: compliance.yaml#categories.travel_services
+      vendor_rules: vendor_rules.yaml#preferred_vendors.travel_services
+      procurement_method: procurement_methods.yaml#method_selection_matrix.travel_services

@@ -1,0 +1,448 @@
+# =============================================================================
+# PROCUREMENT METHODS POLICY
+# =============================================================================
+# Defines all procurement method types, applicable thresholds, mandatory
+# process steps, document templates, evaluation criteria, and timelines.
+#
+# Schema version: 2.1.0
+# Last reviewed:  2025-01-01
+# Owner:          Procurement Governance Team
+# =============================================================================
+
+meta:
+  schema_version: "2.1.0"
+  policy_effective_date: "2025-01-01"
+  review_cycle_months: 12
+  owner_team: procurement_governance
+  contact_email: procurement-policy@company.com
+  currency: INR
+
+# ---------------------------------------------------------------------------
+# Procurement method definitions
+# ---------------------------------------------------------------------------
+methods:
+
+  # ── Direct Purchase ────────────────────────────────────────────────────────
+  direct_purchase:
+    code: DIRECT
+    full_name: Direct Purchase
+    description: >
+      Single-vendor purchase without competitive process. Used for very low
+      value, commodity, or emergency items. No RFQ/RFP required.
+    applicable_thresholds:
+      max_single_transaction_inr: 50000
+      annual_category_spend_cap_inr: 200000
+    minimum_vendor_quotes: 1
+    mandatory_steps:
+      - step: raise_purchase_requisition
+        owner: requestor
+      - step: manager_approval
+        owner: department_manager
+      - step: purchase_order_generation
+        owner: procurement_team
+      - step: goods_receipt_or_service_confirmation
+        owner: requestor
+      - step: three_way_match_and_invoice_processing
+        owner: accounts_payable
+    documentation_required:
+      - purchase_requisition
+      - purchase_order
+      - delivery_note_or_service_confirmation
+      - tax_invoice
+    timeline_days:
+      target_end_to_end: 3
+    exceptions:
+      emergency_above_threshold:
+        allowed: true
+        max_amount_inr: 200000
+        requires: [department_manager_approval, procurement_manager_notification]
+        post_event_rfq_required: true
+        post_event_rfq_within_days: 30
+
+  # ── Request for Quotation ──────────────────────────────────────────────────
+  rfq:
+    code: RFQ
+    full_name: Request for Quotation
+    description: >
+      Competitive price quotation from a minimum number of vendors for
+      well-defined, specification-complete requirements. Faster than RFP;
+      used when quality and scope are clear and vendor selection is primarily
+      price-driven.
+    applicable_thresholds:
+      min_inr: 50001
+      max_inr: 2000000
+    minimum_vendor_quotes: 3
+    preferred_vendor_quotes: 5
+    mandatory_steps:
+      - step: raise_purchase_requisition_with_specifications
+        owner: requestor
+        notes: Technical specifications must be fully defined before RFQ launch
+      - step: vendor_longlist_and_shortlist
+        owner: procurement_team
+        min_vendors_invited: 5
+        min_vendors_responding: 3
+      - step: rfq_document_preparation
+        owner: procurement_team
+        template: RFQ-TEMPLATE-v3
+        includes: [scope, specs, delivery_requirements, payment_terms, evaluation_criteria]
+      - step: rfq_issuance_to_vendors
+        owner: procurement_team
+        min_response_time_days: 5
+      - step: bid_receipt_and_tabulation
+        owner: procurement_team
+        notes: All bids opened simultaneously; bid register maintained
+      - step: commercial_evaluation
+        owner: procurement_team
+        method: lowest_technically_acceptable_bid
+      - step: clarifications_if_required
+        owner: procurement_team
+        max_rounds: 2
+      - step: award_recommendation
+        owner: procurement_team
+      - step: approvals_per_approval_chain
+        owner: approval_chain
+        reference: approvals.yaml
+      - step: purchase_order_generation
+        owner: procurement_team
+      - step: vendor_notification_of_outcome
+        owner: procurement_team
+        unsuccessful_vendors_notified: true
+      - step: goods_receipt_or_service_confirmation
+        owner: requestor
+      - step: three_way_match_and_invoice_processing
+        owner: accounts_payable
+    documentation_required:
+      - purchase_requisition
+      - rfq_document
+      - bid_register
+      - commercial_evaluation_matrix
+      - award_recommendation_note
+      - purchase_order
+      - delivery_note_or_service_confirmation
+      - tax_invoice
+    evaluation_criteria:
+      price:
+        weight: 0.80
+      delivery_timeline:
+        weight: 0.10
+      warranty_and_support:
+        weight: 0.10
+    timeline_days:
+      rfq_preparation: 2
+      vendor_response_period: 7
+      evaluation_and_award: 3
+      target_end_to_end: 15
+    single_source_exception:
+      allowed: true
+      requires: [cpo_approval, documented_justification]
+      valid_reasons:
+        - proprietary_compatibility
+        - sole_supplier_for_specification
+        - emergency_with_no_time_for_competition
+
+  # ── Request for Proposal ───────────────────────────────────────────────────
+  rfp:
+    code: RFP
+    full_name: Request for Proposal
+    description: >
+      Full competitive process for complex, high-value, or technically
+      intricate requirements where vendor solution and capability matter as
+      much as price. Uses weighted multi-criteria evaluation.
+    applicable_thresholds:
+      min_inr: 2000001
+      max_inr: null                  # no upper limit; also used for strategic
+    minimum_vendor_quotes: 3
+    preferred_vendor_quotes: 5
+    mandatory_steps:
+      - step: business_case_preparation
+        owner: business_owner
+        template: BUSINESS-CASE-TEMPLATE-v2
+        includes:
+          - problem_statement
+          - options_analysis
+          - budget_estimate
+          - expected_roi
+          - risk_assessment
+      - step: requirements_workshops
+        owner: procurement_team_and_business_owner
+        stakeholder_sign_off: true
+      - step: market_sounding_optional
+        owner: procurement_team
+        notes: RFI may be issued before RFP for unfamiliar markets
+      - step: rfp_document_preparation
+        owner: procurement_team
+        template: RFP-TEMPLATE-v4
+        includes:
+          - company_overview
+          - scope_and_objectives
+          - functional_requirements
+          - technical_requirements
+          - service_levels
+          - pricing_model_request
+          - vendor_qualification_criteria
+          - evaluation_methodology
+          - timeline_and_milestones
+          - terms_and_conditions_outline
+      - step: vendor_pre_qualification
+        owner: procurement_team
+        min_pq_vendors_invited: 8
+        min_rfp_vendors_qualified: 3
+      - step: rfp_issuance_and_pre_bid_conference
+        owner: procurement_team
+        pre_bid_conference_required: true
+        clarification_period_days: 7
+      - step: proposal_receipt
+        owner: procurement_team
+        min_response_time_days: 14
+        late_bids_policy: not_accepted_unless_force_majeure
+      - step: technical_evaluation
+        owner: technical_evaluation_committee
+        committee_min_size: 3
+        scoring_method: weighted_criteria
+        template: TECHNICAL-EVALUATION-v3
+      - step: commercial_evaluation
+        owner: procurement_team
+        notes: Commercial envelopes opened only for technically qualified vendors
+      - step: vendor_presentations_optional
+        owner: procurement_team
+        notes: Required for strategic tier procurement
+      - step: best_and_final_offer
+        owner: procurement_team
+        allowed: true
+        rounds_maximum: 1
+      - step: due_diligence
+        owner: procurement_team_and_legal
+        includes:
+          - financial_health_check
+          - reference_checks
+          - security_assessment_if_applicable
+          - legal_and_compliance_screening
+      - step: negotiation
+        owner: procurement_team_with_legal_support
+        negotiation_authority_matrix_reference: negotiation_authority.yaml
+        key_negotiation_areas:
+          - price_and_payment_terms
+          - sla_and_penalties
+          - ip_ownership
+          - indemnity_and_liability_caps
+          - exit_and_termination_rights
+          - price_revision_mechanism
+      - step: award_recommendation_and_approvals
+        owner: procurement_team
+        reference: approvals.yaml
+      - step: contract_drafting_and_execution
+        owner: legal_team_and_procurement
+        reference: contract_requirements
+      - step: purchase_order_or_contract_issuance
+        owner: procurement_team
+      - step: vendor_debriefs
+        owner: procurement_team
+        unsuccessful_vendors_debriefed: true
+        notes: Improves market relationships and future competition quality
+    documentation_required:
+      - business_case
+      - rfp_document
+      - pre_bid_minutes
+      - proposal_evaluation_matrix
+      - technical_evaluation_scores
+      - negotiation_record
+      - award_recommendation_note
+      - approval_sign_offs
+      - signed_contract_or_msa
+      - purchase_order
+    evaluation_criteria_default:
+      technical_solution:
+        weight: 0.35
+      price_and_tco:
+        weight: 0.30
+      vendor_capability_and_experience:
+        weight: 0.15
+      implementation_plan:
+        weight: 0.10
+      support_and_sla:
+        weight: 0.10
+    timeline_days:
+      business_case_and_requirements: 10
+      rfp_preparation: 10
+      vendor_qualification: 5
+      vendor_response_period: 21
+      evaluation_and_shortlist: 10
+      bafo_and_negotiation: 14
+      due_diligence_and_approvals: 10
+      contract_execution: 14
+      target_end_to_end: 90
+    single_source_exception:
+      allowed: true
+      requires: [board_approval_above_10cr, cpo_approval_below, documented_justification]
+
+  # ── Request for Information ────────────────────────────────────────────────
+  rfi:
+    code: RFI
+    full_name: Request for Information
+    description: >
+      Non-binding market research exercise. Used before RFP to understand
+      vendor landscape, validate requirements, and build vendor shortlist.
+      Does not result in a contract award.
+    creates_no_obligation: true
+    typical_use_cases:
+      - market_sounding_before_rfp
+      - technology_landscape_assessment
+      - new_category_exploration
+    minimum_vendors_contacted: 5
+    response_period_days: 10
+    documentation_required:
+      - rfi_document
+      - vendor_response_summary
+
+  # ── Reverse Auction ────────────────────────────────────────────────────────
+  reverse_auction:
+    code: RA
+    full_name: Reverse Auction / e-Auction
+    description: >
+      Real-time online competitive bidding event where pre-qualified vendors
+      submit successively lower bids. Used for commodity or
+      specification-complete categories with multiple willing vendors.
+    applicable_thresholds:
+      min_inr: 500000
+    minimum_qualified_vendors: 3
+    prerequisites:
+      - pre_qualification_completed: true
+      - technical_specifications_fixed: true
+      - vendor_training_completed: true
+    auction_rules:
+      opening_price_required: true   # set based on RFQ benchmark
+      minimum_decrement_percentage: 0.5
+      extension_on_last_minute_bid_minutes: 5
+      maximum_duration_hours: 2
+      anonymity: true                # vendors cannot see each other's identities
+    platform: e_procurement_portal
+    post_auction:
+      price_validity_days: 30
+      commercial_verification_required: true
+    documentation_required:
+      - pre_qualification_report
+      - auction_specifications
+      - auction_log_and_bid_record
+      - award_recommendation
+
+  # ── Framework Agreement ────────────────────────────────────────────────────
+  framework_agreement:
+    code: FA
+    full_name: Framework Agreement / Rate Contract
+    description: >
+      Pre-negotiated multi-vendor agreements for repetitive purchases over a
+      defined period. Reduces cycle time for repeat procurement of
+      commonly used goods or services.
+    applicable_categories:
+      - office_supplies
+      - laptop
+      - desktop
+      - travel_services
+      - training_services
+    agreement_duration_years:
+      maximum: 3
+      renewal_option: 1              # one renewal of up to 1 year
+    minimum_vendors_on_framework: 2
+    call_off_process:
+      mini_competition_required_above_inr: 200000
+      direct_call_off_below_inr: 200000
+      call_off_approvals: reference_approvals_yaml
+    review_frequency_months: 6
+
+# ---------------------------------------------------------------------------
+# Procurement method selection matrix
+# (by category + budget tier — references methods above)
+# ---------------------------------------------------------------------------
+method_selection_matrix:
+
+  laptop:
+    micro: direct_purchase
+    low: rfq
+    medium: rfq
+    high: rfp
+    strategic: rfp
+    framework_agreement_eligible: true
+
+  desktop:
+    micro: direct_purchase
+    low: rfq
+    medium: rfq
+    high: rfp
+    strategic: rfp
+    framework_agreement_eligible: true
+
+  software:
+    micro: rfq
+    low: rfq
+    medium: rfq
+    high: rfp
+    strategic: rfp
+
+  cloud_services:
+    low: rfq
+    medium: rfp
+    high: rfp
+    strategic: rfp
+
+  network_equipment:
+    low: rfq
+    medium: rfp
+    high: rfp
+    strategic: rfp
+
+  consulting_services:
+    low: rfq
+    medium: rfp
+    high: rfp
+    strategic: rfp
+
+  professional_services:
+    low: rfq
+    medium: rfp
+    high: rfp
+    strategic: rfp
+
+  training_services:
+    micro: direct_purchase
+    low: rfq
+    medium: rfq
+    high: rfp
+    framework_agreement_eligible: true
+
+  office_supplies:
+    micro: direct_purchase
+    low: direct_purchase
+    medium: rfq
+    framework_agreement_eligible: true
+
+  furniture:
+    micro: direct_purchase
+    low: rfq
+    medium: rfq
+    high: rfp
+    strategic: rfp
+
+  telecom_services:
+    low: rfq
+    medium: rfp
+    high: rfp
+    strategic: rfp
+
+  travel_services:
+    micro: direct_purchase
+    low: direct_purchase
+    medium: rfq
+    framework_agreement_eligible: true
+
+# ---------------------------------------------------------------------------
+# Conflict-of-interest rules during procurement process
+# ---------------------------------------------------------------------------
+conflict_of_interest:
+  disclosure_required: true
+  evaluator_coi_declaration: true
+  recusal_required_if_coi: true
+  recusal_documented: true
+  unapproved_vendor_contact_prohibited: true
+  prohibition_on_post_process_employment:
+    duration_months: 12
+    applies_to: [procurement_team, evaluation_committee_members]

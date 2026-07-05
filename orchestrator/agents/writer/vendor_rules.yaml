@@ -1,0 +1,406 @@
+# =============================================================================
+# VENDOR RULES & MANAGEMENT POLICIES
+# =============================================================================
+# Preferred vendors, banned vendors, qualification criteria, performance
+# management, diversity & inclusion targets, and relationship governance.
+#
+# Schema version: 2.1.0
+# Last reviewed:  2025-01-01
+# Owner:          Procurement Governance Team
+# =============================================================================
+
+meta:
+  schema_version: "2.1.0"
+  policy_effective_date: "2025-01-01"
+  review_cycle_months: 12
+  owner_team: vendor_management
+  contact_email: vendor-management@company.com
+
+# ---------------------------------------------------------------------------
+# Vendor risk classification
+# ---------------------------------------------------------------------------
+vendor_risk_classification:
+  critical:
+    label: Critical Vendor
+    description: >
+      Vendors whose failure or breach would cause significant operational
+      disruption, data loss, or regulatory breach.
+    annual_review_required: true
+    business_continuity_plan_required: true
+    dual_sourcing_encouraged: true
+    exit_plan_required: true
+    examples:
+      - Core ERP/CRM vendors
+      - Cloud infrastructure providers
+      - Payment processors
+  high:
+    label: High-Risk Vendor
+    description: >
+      Vendors handling sensitive data or providing important services with
+      moderate substitutability.
+    annual_review_required: true
+    exit_plan_encouraged: true
+  medium:
+    label: Medium-Risk Vendor
+    description: Standard commercial vendors with limited data access.
+    review_frequency_months: 24
+  low:
+    label: Low-Risk Vendor
+    description: Commoditised supply with easy substitution.
+    review_frequency_months: 36
+
+# ---------------------------------------------------------------------------
+# Vendor qualification & onboarding
+# ---------------------------------------------------------------------------
+qualification:
+  mandatory_documents:
+    - document: certificate_of_incorporation
+      required: true
+    - document: gst_registration
+      required: true
+      applicable_regions: [india]
+    - document: pan_card
+      required: true
+      applicable_regions: [india]
+    - document: msme_certificate
+      required: false
+      note: Required only if vendor claims MSME status
+    - document: bank_account_details_with_cancelled_cheque
+      required: true
+    - document: audited_financial_statements
+      required: true
+      years_required: 2
+      waived_for_spend_below_inr: 500000
+    - document: trade_references
+      minimum_count: 2
+      required_for_spend_above_inr: 500000
+
+  financial_health_checks:
+    credit_score_check_required: true
+    minimum_annual_turnover_inr_by_category:
+      laptop: 10000000
+      desktop: 10000000
+      software: 5000000
+      cloud_services: 50000000
+      network_equipment: 20000000
+      consulting_services: 5000000
+      professional_services: 10000000
+      training_services: 1000000
+      telecom_services: 100000000
+      furniture: 2000000
+      office_supplies: 500000
+      travel_services: 5000000
+    negative_net_worth_disqualifies: true
+
+  legal_screening:
+    sanctions_screening_required: true          # UN, OFAC, EU lists
+    litigation_check_required: true
+    insolvency_check_required: true
+    politically_exposed_persons_check: true
+    beneficial_ownership_disclosure_required: true
+
+  onboarding_sla_days: 10
+
+# ---------------------------------------------------------------------------
+# Preferred vendors — by category
+# ---------------------------------------------------------------------------
+preferred_vendors:
+  laptop:
+    tier_1:                          # preferred; use first
+      - name: Dell Technologies
+        vendor_id: VND-IT-001
+        preferred_models: [Latitude, Precision]
+        contract_id: CNT-DELL-2024
+        contract_expiry: "2026-03-31"
+      - name: Lenovo
+        vendor_id: VND-IT-002
+        preferred_models: [ThinkPad, ThinkBook]
+        contract_id: CNT-LNV-2024
+        contract_expiry: "2026-06-30"
+    tier_2:                          # fallback if tier_1 unavailable / pricing uncompetitive
+      - name: HP Inc.
+        vendor_id: VND-IT-003
+        preferred_models: [EliteBook, ProBook]
+      - name: Apple
+        vendor_id: VND-IT-004
+        note: Engineering / design roles only; requires CTO sign-off
+
+  desktop:
+    tier_1:
+      - name: Dell Technologies
+        vendor_id: VND-IT-001
+      - name: Lenovo
+        vendor_id: VND-IT-002
+    tier_2:
+      - name: HP Inc.
+        vendor_id: VND-IT-003
+
+  software:
+    approved_saas_vendors:           # vendors cleared through security assessment
+      - name: Microsoft 365
+        vendor_id: VND-SW-001
+        security_clearance_date: "2024-06-01"
+        clearance_expiry: "2026-06-01"
+        data_classification_allowed: [internal, confidential]
+      - name: Google Workspace
+        vendor_id: VND-SW-002
+        security_clearance_date: "2024-06-01"
+        clearance_expiry: "2026-06-01"
+        data_classification_allowed: [internal, confidential]
+      - name: Salesforce
+        vendor_id: VND-SW-003
+        security_clearance_date: "2024-03-01"
+        clearance_expiry: "2025-03-01"
+        renewal_in_progress: true
+      - name: Atlassian (Jira/Confluence)
+        vendor_id: VND-SW-004
+        security_clearance_date: "2024-09-01"
+        clearance_expiry: "2026-09-01"
+      - name: Zoom
+        vendor_id: VND-SW-005
+        security_clearance_date: "2024-06-01"
+        clearance_expiry: "2026-06-01"
+    note: All new software vendors must complete security assessment before use.
+
+  cloud_services:
+    hyperscale_providers:
+      - name: Amazon Web Services
+        vendor_id: VND-CLD-001
+        account_team_contact: aws-team@company.com
+        enterprise_agreement: true
+        data_residency_region: ap-south-1   # Mumbai
+      - name: Microsoft Azure
+        vendor_id: VND-CLD-002
+        account_team_contact: azure-team@company.com
+        enterprise_agreement: true
+        data_residency_region: centralindia
+      - name: Google Cloud Platform
+        vendor_id: VND-CLD-003
+        account_team_contact: gcp-team@company.com
+        enterprise_agreement: false
+    preferred_primary: aws
+    multi_cloud_strategy: active_active_for_critical
+
+  network_equipment:
+    tier_1:
+      - name: Cisco Systems
+        vendor_id: VND-NET-001
+        partner_tier: Gold
+      - name: Fortinet
+        vendor_id: VND-NET-002
+        note: Preferred for firewalls and SASE
+    tier_2:
+      - name: Aruba Networks (HPE)
+        vendor_id: VND-NET-003
+        note: Preferred for wireless
+      - name: Juniper Networks
+        vendor_id: VND-NET-004
+    banned_vendors:
+      - name: Huawei
+        reason: Government advisory — national security concerns
+        reference: GOI_Advisory_2020
+      - name: ZTE
+        reason: Government advisory — national security concerns
+        reference: GOI_Advisory_2020
+
+  consulting_services:
+    approved_panels:
+      - name: Deloitte
+        vendor_id: VND-CON-001
+        specialisms: [strategy, digital_transformation, finance]
+      - name: PwC
+        vendor_id: VND-CON-002
+        specialisms: [tax, audit, risk]
+      - name: McKinsey & Company
+        vendor_id: VND-CON-003
+        specialisms: [strategy, operations]
+      - name: BCG
+        vendor_id: VND-CON-004
+        specialisms: [strategy, technology]
+    note: >
+      Firms not on the panel may be engaged with CPO approval and
+      qualification assessment.
+
+  professional_services:
+    legal:
+      - name: AZB & Partners
+        vendor_id: VND-LEG-001
+        specialisms: [M&A, corporate, IP]
+      - name: Cyril Amarchand Mangaldas
+        vendor_id: VND-LEG-002
+        specialisms: [corporate, regulatory]
+    audit:
+      - name: Deloitte Haskins & Sells
+        vendor_id: VND-AUD-001
+        appointment: statutory_auditor
+      - name: Grant Thornton
+        vendor_id: VND-AUD-002
+        appointment: internal_auditor
+
+  training_services:
+    preferred_lms_vendors:
+      - name: LinkedIn Learning
+        vendor_id: VND-TRN-001
+      - name: Coursera for Business
+        vendor_id: VND-TRN-002
+    preferred_classroom_vendors: []  # open to qualified suppliers
+
+  office_supplies:
+    preferred_vendors:
+      - name: Staples India
+        vendor_id: VND-OFF-001
+      - name: Amazon Business
+        vendor_id: VND-OFF-002
+        note: For spot buys below INR 5000 only
+
+  furniture:
+    tier_1:
+      - name: Godrej Interio
+        vendor_id: VND-FRN-001
+      - name: Featherlite
+        vendor_id: VND-FRN-002
+    tier_2:
+      - name: Herman Miller / Millerknoll
+        vendor_id: VND-FRN-003
+        note: Executive / ergonomic specialist; CTO or COO approval required
+
+  telecom_services:
+    preferred_vendors:
+      - name: Airtel Business
+        vendor_id: VND-TEL-001
+        services: [mobile, broadband, MPLS, SD-WAN]
+      - name: Tata Communications
+        vendor_id: VND-TEL-002
+        services: [MPLS, international, voice]
+      - name: Reliance Jio Business
+        vendor_id: VND-TEL-003
+        services: [mobile, broadband]
+
+  travel_services:
+    corporate_travel_management:
+      - name: FCm Travel Solutions
+        vendor_id: VND-TRV-001
+        contract_id: CNT-FCM-2024
+      - name: MakeMyTrip Corporate
+        vendor_id: VND-TRV-002
+    hotel_aggregators:
+      - name: Booking.com Business
+        vendor_id: VND-TRV-003
+    note: All travel must be booked through approved TMC unless emergency.
+
+# ---------------------------------------------------------------------------
+# Banned / restricted vendor list
+# ---------------------------------------------------------------------------
+banned_vendors:
+  global:
+    - name: Huawei
+      vendor_id: ~
+      category_scope: [network_equipment, telecom_services]
+      reason: Government security advisory
+      reference: GOI_Advisory_2020
+      added_date: "2020-06-15"
+      added_by: ciso
+    - name: ZTE Corporation
+      vendor_id: ~
+      category_scope: [network_equipment, telecom_services]
+      reason: Government security advisory
+      reference: GOI_Advisory_2020
+      added_date: "2020-06-15"
+      added_by: ciso
+    - name: NSO Group
+      vendor_id: ~
+      category_scope: [software]
+      reason: Surveillance/spyware designation
+      added_date: "2021-11-10"
+      added_by: legal_team
+  note: >
+    Engagement with any banned vendor, regardless of amount or justification,
+    requires CEO + General Counsel written approval and Board notification.
+
+# ---------------------------------------------------------------------------
+# Diversity & inclusion sourcing targets
+# ---------------------------------------------------------------------------
+diversity_sourcing:
+  enabled: true
+  targets:
+    msme_spend_percentage: 25        # % of annual procurement spend
+    women_owned_business_percentage: 10
+    sc_st_owned_business_percentage: 5
+  tracking:
+    frequency: quarterly
+    report_to: cpo_and_board
+  incentives:
+    msme_payment_terms_days: 30      # faster than standard 45 days
+    msme_bid_evaluation_preference_percentage: 10  # price preference
+
+# ---------------------------------------------------------------------------
+# Vendor performance management
+# ---------------------------------------------------------------------------
+vendor_performance:
+  kpi_framework:
+    on_time_delivery:
+      weight: 0.30
+      minimum_score: 80             # out of 100
+    quality_acceptance_rate:
+      weight: 0.25
+      minimum_score: 95
+    invoice_accuracy:
+      weight: 0.15
+      minimum_score: 98
+    sla_compliance:
+      weight: 0.20
+      minimum_score: 90
+    responsiveness:
+      weight: 0.10
+      minimum_score: 80
+
+  scoring:
+    method: weighted_average
+    review_frequency_months: 6
+    scorecard_shared_with_vendor: true
+
+  thresholds:
+    preferred_status_minimum: 85
+    approved_status_minimum: 70
+    probation_threshold: 60
+    disqualification_threshold: 50
+
+  escalation:
+    below_probation_threshold:
+      action: place_on_vendor_probation
+      probation_period_months: 3
+      improvement_plan_required: true
+    consecutive_reviews_below_approved:
+      count: 2
+      action: suspend_new_orders
+    below_disqualification_threshold:
+      action: remove_from_approved_list
+      cpo_sign_off_required: true
+      requalification_possible_after_months: 12
+
+# ---------------------------------------------------------------------------
+# Payment terms
+# ---------------------------------------------------------------------------
+payment_terms:
+  defaults:
+    standard_net_days: 45
+    msme_net_days: 30
+    early_payment_discount_accepted: true
+
+  category_overrides:
+    office_supplies:
+      net_days: 30
+    travel_services:
+      net_days: 7                    # TMC invoices processed quickly
+    cloud_services:
+      payment_type: monthly_subscription_auto_pay
+    software:
+      payment_type: annual_upfront_or_monthly
+      upfront_discount_minimum_percentage: 10  # must negotiate if paying upfront
+    professional_services:
+      milestone_based_payment: true
+      advance_percentage_maximum: 20
+
+  late_payment:
+    penalty_applies: true
+    msme_late_payment_interest_rate_annual: 18  # as per MSMED Act India
